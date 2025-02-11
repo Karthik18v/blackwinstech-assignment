@@ -1,6 +1,7 @@
 const Contact = require("../model/contact");
 const { v4: uuidv4 } = require("uuid");
 const { validateContact } = require("../validation/contactValidation");
+const { compareSync } = require("bcrypt");
 
 const getAllContacts = async () => {
   try {
@@ -28,7 +29,6 @@ const getContact = async (contactId) => {
 const addContact = async (reqBody) => {
   const { name, email, phoneNumber, address } = reqBody;
 
-  // Check for duplicate email
   const existingContact = await Contact.findOne({ email });
   if (existingContact) {
     return { success: false, message: "Email already exists", status: 409 };
@@ -42,7 +42,6 @@ const addContact = async (reqBody) => {
     address,
   };
 
-  // Validate contact data
   const { error } = validateContact(newContact);
   if (error) {
     return { success: false, error: error.details.map((err) => err.message) };
@@ -51,7 +50,11 @@ const addContact = async (reqBody) => {
   try {
     const contact = new Contact(newContact);
     await contact.save();
-    return { success: true, message: "Contact added successfully", data: contact };
+    return {
+      success: true,
+      message: "Contact added successfully",
+      data: contact,
+    };
   } catch (error) {
     console.error("Error While Adding Contact:", error.message);
     return { success: false, error: error.message };
@@ -72,42 +75,45 @@ const deleteContact = async (contactId) => {
 };
 
 const updateContact = async (contactId, contactData) => {
-  // Validate contact data
   const { error } = validateContact(contactData);
   if (error) {
     return { success: false, error: error.details.map((err) => err.message) };
   }
 
   try {
-    const updatedContact = await Contact.findOneAndUpdate({ contactId }, contactData, { new: true });
+    const updatedContact = await Contact.findOneAndUpdate(
+      { contactId },
+      contactData,
+      { new: true }
+    );
 
     if (!updatedContact) {
       return { success: false, message: "Contact not found", status: 404 };
     }
 
-    return { success: true, message: "Contact updated successfully", data: updatedContact };
+    return {
+      message: "Contact updated successfully",
+      data: updatedContact,
+    };
   } catch (error) {
     console.error("Error While Updating Contact:", error.message);
-    return { success: false, error: error.message };
+    return { error: error.message };
   }
 };
 
-const searchContact = async (name, email) => {
+const searchContacts = async (name, email) => {
   try {
-    let filter = {};
-    if (name) filter.name = { $regex: name, $options: "i" }; // Case-insensitive search
-    if (email) filter.email = { $regex: email, $options: "i" };
+    let query = {};
+    if (name) query.name = new RegExp(name, "i");
+    if (email) query.email = new RegExp(email, "i");
 
-    const contacts = await Contact.find(filter);
+    console.log(query);
 
-    return {
-      success: true,
-      contacts,
-      message: contacts.length > 0 ? "Contacts found" : "No contacts found",
-    };
+    const contacts = await Contact.find(query);
+
+    return contacts;
   } catch (error) {
-    console.error("Error While Searching Contact:", error.message);
-    return { success: false, error: error.message };
+    return { message: error.message };
   }
 };
 
@@ -117,5 +123,5 @@ module.exports = {
   addContact,
   deleteContact,
   updateContact,
-  searchContact,
+  searchContacts,
 };
