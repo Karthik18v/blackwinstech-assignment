@@ -96,6 +96,10 @@ const searchContacts = async (req, res) => {
   }
 };
 
+const testing = async (req, res) => {
+  res.send("SuccessFully ");
+};
+
 module.exports = {
   getAllContacts,
   getContact,
@@ -103,4 +107,5 @@ module.exports = {
   deleteContact,
   updateContact,
   searchContacts,
+  testing,
 };
