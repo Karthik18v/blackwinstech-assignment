@@ -1,7 +1,7 @@
 const Contact = require("../model/contact");
 const { v4: uuidv4 } = require("uuid");
 const { validateContact } = require("../validation/contactValidation");
-const { compareSync } = require("bcrypt");
+
 
 const getAllContacts = async () => {
   try {
